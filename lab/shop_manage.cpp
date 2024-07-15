@@ -6,12 +6,18 @@ class items
     int itemcode[m];
     float itemprice[m];
     int quantity[m];
+    int sellcode[m];
+    float sellprice[m];
+    int sellquantity[m];
     int count;
+    int sellcount;
+    int sum = 0;
 
 public:
     void cnt()
     {
         count = 0;
+        sellcount = 0;
     }
     void getitem(void);
     void displaysum(void);
@@ -19,8 +25,7 @@ public:
     void displayitem(void);
     void deleteitem(void);
     void displayspacificitem();
-    void printreceipt(int, int,int);
-    void removeitemfromsell();
+    void printreceipt(void);
 };
 void items ::getitem(void)
 {
@@ -55,117 +60,176 @@ void items ::displaysum(void)
     cout << endl
          << "Total value: " << sum << " BDT" << endl;
 }
-void items ::printreceipt(int i, int q, int returnitem)
+void items ::printreceipt(void)
 {
-    static map<int, int> mp;
-    if (returnitem == -1)
+    int given;
+    if (sellcount != 0)
     {
-        for (auto &m : mp)
+        cout << endl
+             << "      Total Bill = " << sum << " BDT" << endl;
+        cout << "Enter given amount" << endl;
+        cin >> given;
+    }
+
+    cout << "                     -----------------------------------------" << endl;
+    if (sellcount == 0)
+    {
+        cout << "                     |           No sold items found             " << endl;
+    }
+    else
+        cout << "                     | Item Code  Item price  Qua  Net price " << endl;
+    if (sellcount != 0)
+    {
+        for (int i = 0; i < sellcount; i++)
         {
-            if (itemcode[m.first] == itemcode[i])
-            {
-                m.second -= q;
-                return;
-            }
+            cout << "                     |   " << sellcode[i] << "       " << sellprice[i] << " BDT"
+                 << "      " << sellquantity[i] << "     " << (sellquantity[i] * sellprice[i]) << "     " << endl;
+            // sum += (sellquantity[i] * sellprice[i]);
         }
     }
 
-    //
-    if (i == -1 && q == -1)
+    if (sum != 0)
     {
-        int sum = 0;
-        cout << "                     -----------------------------------------" << endl;
-        if(mp.empty()==1)
-        {
-            cout<<"                     |           No sold items found             "<<endl;
-        }
-        else 
-        cout << "                     | Item Code  Item price  Qua  Net price " << endl;
-        for (auto m : mp)
-        {
-            if (itemcode[m.first] != 0)
-            {
-                cout << "                     |   " << itemcode[m.first] << "       " << itemprice[m.first] << " BDT"
-                     << "      " << m.second << "     " << (itemprice[m.first] * m.second) << "     " << endl;
-                sum += (itemprice[m.first] * m.second);
-            }
-        }
-        if(sum!=0)
         cout << "                     |                Total bill:   " << sum << " BDT " << endl;
-        cout << "                     -----------------------------------------" << endl;
-        mp.clear();
-        return;
+        cout << "                     |              Given amount:   " << given << " BDT " << endl;
+        cout << "                     |           Returned amount:   " << given - sum << " BDT " << endl;
     }
-    if (mp.empty() == 0)
-    {
-        for (auto &m : mp)
-        {
-            if (itemcode[m.first] == itemcode[i])
-            {
-                m.second += q;
-                return;
-            }
-        }
-    }
-    // for (auto m : mp)
-    //     cout << m.first << " " << m.second << endl;
-    mp[i] = q;
+    cout << "                     -----------------------------------------" << endl;
+    sellcount = 0;
+    sum -= sum;
 }
 void items ::sell(int x)
 {
     static int totalsell = 0;
     if (x == 3)
     {
-        cout << "Total sell: " << totalsell << " BDT" << endl;
+        cout << endl
+             << "Total sell: " << totalsell << " BDT" << endl;
         return;
     }
-    if (x == 8)
+    if (x == 8) // return item
     {
-        int a, q;
-        cout << "Enter item code" << endl;
-        cin >> a;
-        cout << "Enter item quantity" << endl;
-        cin >> q;
-        for (int i = 0; i < count; i++)
+        if (sellcount == 0)
         {
-            if (itemcode[i] == a)
+            cout << endl
+                 << "      No sold item to remove!!" << endl;
+            return;
+        }
+        int a, q;
+        cout << "Enter sold item code" << endl;
+        cin >> a;
+        for (int i = 0; i < sellcount; i++)
+        {
+            if (a == sellcode[i])
             {
-                quantity[i] += q;
-                cout << "Successfully returned " << endl;
-                totalsell -= (itemprice[i] * q);
-                printreceipt(i, q, -1);
+                cout << "Enter sold item quantity" << endl;
+                cin >> q;
+                if (sellquantity[i] < q)
+                {
+                    cout << endl
+                         << "      Invalid sold item quantity.Only sold " << sellquantity[i] << endl;
+                    return;
+                }
+            }
+            else
+            {
+                cout << endl
+                     << "      Invalid sold item code!!" << endl;
                 return;
             }
+            sellquantity[i] -= q;
+            cout << "      Successfully returned item " << endl;
+            totalsell -= (itemprice[i] * q);
+            sum -= (itemprice[i] * q);
+            if (sellquantity[i] == 0)
+            {
+                remove(sellcode, sellcode + 50, sellcode[i]);
+                sellcount--;
+            }
+        }
+
+        for (int j = 0; j < count; j++)
+        {
+            if (a == itemcode[j])
+                quantity[j] += q;
+        }
+        return;
+    } // return closed
+    if (count == 0)
+    {
+        cout << endl
+             << "      Sorry, No item is available at this moment." << endl;
+        return;
+    }
+
+    int a, q;
+    cout << "Enter sell item code" << endl;
+    cin >> a;
+    int notfound = 1;
+    for (int i = 0; i < count; i++)
+    {
+        if (a == itemcode[i])
+        {
+            if (quantity[i] == 0)
+            {
+                cout << endl
+                     << "      Sorry, The item is not available at this moment" << endl;
+                return;
+            }
+
+            notfound = 0;
+            break;
         }
     }
-    int a, q;
-    cout << "Enter item code" << endl;
-    cin >> a;
+    if (notfound)
+    {
+        cout << endl
+             << "      Invalid item code!!" << endl
+             << endl;
+        return;
+    }
+
     cout << "Enter item quantity" << endl;
     cin >> q;
+
     for (int i = 0; i < count; i++)
     {
         if (itemcode[i] == a)
         {
-            if (quantity[i] == 0)
+            if (quantity[i] < q)
             {
-                cout << "Sorry, The product is not available" << endl;
-                break;
-            }
-            else if (quantity[i] < q)
-            {
-                cout << "Invalid Quantity.Only have " << quantity[i] << endl;
-                break;
+                cout << endl
+                     << "      Invalid Quantity.Only have " << quantity[i] << endl;
+                return;
             }
             quantity[i] -= q;
-            printreceipt(i, q, 5);
             cout << "Succesfully sell " << (itemprice[i] * q) << " BDT" << endl;
+            sum += (itemprice[i] * q);
             totalsell += (itemprice[i] * q);
+            for (int i = 0; i < sellcount; i++)
+            {
+                if (a == sellcode[i])
+                {
+                    sellquantity[i] += q;
+                    return;
+                }
+            }
+            sellcode[sellcount] = itemcode[i];
+            sellprice[sellcount] = itemprice[i];
+            sellquantity[sellcount] = q;
+            sellcount++;
+            return;
         }
     }
 }
 void items ::displayitem(void)
 {
+    if (count == 0)
+    {
+        cout << endl
+             << "No item data found" << endl;
+        return;
+    }
     cout << "Code   Price   Quantity" << endl;
     for (int i = 0; i < count; i++)
     {
@@ -176,30 +240,59 @@ void items ::displayitem(void)
 }
 void items ::deleteitem(void)
 {
+    if (count == 0)
+    {
+        cout << endl
+             << "No item to delete" << endl;
+        return;
+    }
     int a;
     cout << "Enter item code" << endl;
     cin >> a;
-    remove(itemcode, itemcode + m, a);
-    count--;
+    for (int i = 0; i < count; i++)
+    {
+        if (itemcode[i] == a)
+        {
+            remove(itemcode, itemcode + m, a);
+            count--;
+            cout << endl
+                 << "Item deleted successfully" << endl;
+            return;
+        }
+    }
+    cout << endl
+         << "Invalid itemcode" << endl;
 }
 void items ::displayspacificitem(void)
 {
+    if (count == 0)
+    {
+        cout << endl
+             << "No items is available" << endl;
+        return;
+    }
     cout << "Enter search item code" << endl;
-    int x;
+    int x, invalid = 1;
     cin >> x;
-    cout << "Code  Price  Quantity" << endl;
+
     for (int i = 0; i < count; i++)
     {
         if (itemcode[i] == x)
         {
+            cout << "Code  Price  Quantity" << endl;
             cout << itemcode[i] << "   ";
             cout << itemprice[i] << " BDT    ";
             cout << quantity[i] << endl;
+            if (quantity[i] == 0)
+                cout << "Stock out" << endl;
+            invalid = 0;
             break;
         }
     }
+    if (invalid)
+        cout << endl
+             << "      No item matched for this code!!" << endl;
 }
-
 
 int main()
 {
@@ -222,7 +315,7 @@ int main()
         cout << "        9 Print receipt" << endl;
         cout << "       10 quit: " << endl;
         cout << endl
-             << "What is your opinion?" << endl;
+             << "What is your opinion?  ";
         cin >> x;
         switch (x)
         {
@@ -251,7 +344,7 @@ int main()
             order.sell(8);
             break;
         case 9:
-            order.printreceipt(-1, -1,0);
+            order.printreceipt();
             break;
         case 10:
             break;
